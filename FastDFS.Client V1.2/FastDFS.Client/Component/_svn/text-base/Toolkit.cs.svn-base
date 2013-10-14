@@ -1,0 +1,380 @@
+using System;
+using System.IO;
+using System.Net.Sockets;
+using System.Text;
+
+namespace FastDFS.Client.Component
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    public class Toolkit  
+    {
+        /// <summary>
+        /// 字段分隔符
+        /// </summary>
+        public const String FDFS_FIELD_SEPERATOR = "\u0002";
+        /// <summary>
+        /// 最长的文件扩展名
+        /// </summary>
+        public const sbyte FDFS_FILE_EXT_NAME_MAX_LEN = 5;
+        /// <summary>
+        /// 最长的fastdfs组名
+        /// </summary>
+        public const sbyte FDFS_GROUP_NAME_MAX_LEN = 16;
+        /// <summary>
+        /// ip地址的长度大小
+        /// </summary>
+        public const sbyte FDFS_IPADDR_SIZE = 16;
+        /// <summary>
+        /// 退出命令代码
+        /// </summary>
+        public const sbyte FDFS_PROTO_CMD_QUIT = 82;
+        /// <summary>
+        /// 记录分隔符
+        /// </summary>
+        public const String FDFS_RECORD_SEPERATOR = "\u0001";
+        /// <summary>
+        /// 删除文件命令代码
+        /// </summary>
+        public const sbyte STORAGE_PROTO_CMD_DELETE_FILE = 12;
+        /// <summary>
+        /// 下载文件代码
+        /// </summary>
+        public const sbyte STORAGE_PROTO_CMD_DOWNLOAD_FILE = 14;
+        /// <summary>
+        /// 得到文件metadata代码
+        /// </summary>
+        public const sbyte STORAGE_PROTO_CMD_GET_METADATA = 15;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte STORAGE_PROTO_CMD_RESP = 10;
+        /// <summary>
+        /// 设置metadata代码
+        /// </summary>
+        public const sbyte STORAGE_PROTO_CMD_SET_METADATA = 13;
+        /// <summary>
+        /// 上传文件代码
+        /// </summary>
+        public const sbyte STORAGE_PROTO_CMD_UPLOAD_FILE = 11;
+
+        /// <summary> 
+        /// for replace, insert when the meta item not exist, otherwise update it
+        /// </summary>
+        public const sbyte STORAGE_SET_METADATA_FLAG_MERGE = (sbyte) 'M';
+
+        /// <summary> 
+        /// for overwrite all old metadata
+        /// </summary>
+        public const sbyte STORAGE_SET_METADATA_FLAG_OVERWRITE = (sbyte) 'O';
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVER_LIST_GROUP = 91;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVER_LIST_STORAGE = 92;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVER_RESP = 90;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVICE_QUERY_FETCH_ALL = 105;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVICE_QUERY_FETCH_ONE = 102;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVICE_QUERY_STORE_WITH_GROUP = 104;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVICE_QUERY_STORE_WITHOUT_GROUP = 101;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVICE_QUERY_UPDATE = 103;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SERVICE_RESP = 100;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_CMD_SIZE = 1;
+        /// <summary>
+        /// 
+        /// </summary>
+        public const sbyte TRACKER_PROTO_PKG_LEN_SIZE = 8;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected internal static readonly int PROTO_HEADER_CMD_INDEX = TRACKER_PROTO_PKG_LEN_SIZE;
+        /// <summary>
+        /// 
+        /// </summary>
+        protected internal static readonly int PROTO_HEADER_STATUS_INDEX = TRACKER_PROTO_PKG_LEN_SIZE + 1;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static readonly int TRACKER_QUERY_STORAGE_FETCH_BODY_LEN = FDFS_GROUP_NAME_MAX_LEN + FDFS_IPADDR_SIZE - 1 +
+                                                                          TRACKER_PROTO_PKG_LEN_SIZE;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static readonly int TRACKER_QUERY_STORAGE_STORE_BODY_LEN = FDFS_GROUP_NAME_MAX_LEN + FDFS_IPADDR_SIZE +
+                                                                          TRACKER_PROTO_PKG_LEN_SIZE;
+
+        private Toolkit()
+        {
+        }
+
+        /// <summary> pack header by FastDFS transfer protocol</summary>
+        /// <param _name="cmd">which command to send
+        /// </param>
+        /// <param _name="pkgLength">package _body length
+        /// </param>
+        /// <param _name="_errno">status code, should be (byte)0
+        /// </param>
+        /// <returns> packed byte buffer
+        /// </returns>
+        public static sbyte[] PackHeader(sbyte cmd, long pkgLength, sbyte errno)
+        {
+            sbyte[] headerBuffer = new sbyte[TRACKER_PROTO_PKG_LEN_SIZE + 2];
+            SupportClass.ArraySupport.Fill(SupportClass.ToByteArray(headerBuffer), (byte) 0);
+
+            sbyte[] hexs = LongToBuffer(pkgLength);
+            Array.Copy(hexs, 0, headerBuffer, 0, hexs.Length);
+            headerBuffer[PROTO_HEADER_CMD_INDEX] = cmd;
+            headerBuffer[PROTO_HEADER_STATUS_INDEX] = errno;
+            return headerBuffer;
+        }
+
+        /// <summary> receive pack header</summary>
+        /// <param _name="in">input stream
+        /// </param>
+        /// <param _name="cmd">expect response command
+        /// </param>
+        /// <param _name="bodyLength">expect response package _body length
+        /// </param>
+        /// <returns> HeaderInfo: _errno and pkg _body length
+        /// </returns>
+        public static HeaderInfo RecvHeader(Stream stream, sbyte cmd, long bodyLength)
+        {
+            int bytes;
+
+            sbyte[] headerBuffer = new sbyte[TRACKER_PROTO_PKG_LEN_SIZE + 2];
+
+            if ((bytes = SupportClass.ReadInput(stream, headerBuffer, 0, headerBuffer.Length)) != headerBuffer.Length)
+                throw new IOException(string.Format("Recv package size {0} != {1}", bytes, headerBuffer.Length));
+
+            if (headerBuffer[PROTO_HEADER_CMD_INDEX] != cmd)
+                throw new IOException(string.Format("Recv cmd: {0} is not correct, expect cmd:{1}",
+                                                    headerBuffer[PROTO_HEADER_CMD_INDEX], cmd));
+
+            if (headerBuffer[PROTO_HEADER_STATUS_INDEX] != 0)
+                return new HeaderInfo(headerBuffer[PROTO_HEADER_STATUS_INDEX], 0);
+
+            long length = BufferToLong(headerBuffer, 0);
+            if (length < 0)
+                throw new IOException(string.Format("Recv _body length: {0} < 0!", length));
+
+            if (bodyLength >= 0 && length != bodyLength)
+                throw new IOException(string.Format("Recv _body length: {0} is not correct, expect length: {1}",
+                                                    length, bodyLength));
+
+            return new HeaderInfo(0, length);
+        }
+
+        /// <summary> receive whole pack</summary>
+        /// <param _name="in">input stream
+        /// </param>
+        /// <param _name="cmd">expect response command
+        /// </param>
+        /// <param _name="bodyLength">expect response package _body length
+        /// </param>
+        /// <returns> PackageInfo: _errno and reponse _body(byte buff)
+        /// </returns>
+        public static PackageInfo RecvPackage(Stream stream, sbyte cmd, long bodyLength)
+        {
+            HeaderInfo header = RecvHeader(stream, cmd, bodyLength);
+            if (header.ErrorNo != 0)return new PackageInfo(header.ErrorNo, null);
+
+            sbyte[] body = new sbyte[(int) header.Length];
+            int totalBytes = 0;
+            int remainBytes = (int) header.Length;
+            int bytes;
+
+            while (totalBytes < header.Length)
+            {
+                if ((bytes = SupportClass.ReadInput(stream, body, totalBytes, remainBytes)) < 0) break;
+
+                totalBytes += bytes;
+                remainBytes -= bytes;
+            }
+
+            if (totalBytes != header.Length)
+                throw new IOException(string.Format("Recv package size {0} != {1}", totalBytes, header.Length));
+
+            return new PackageInfo(0, body);
+        }
+
+        /// <summary> split metadata to _name value pair array</summary>
+        /// <param _name="buffer">metadata
+        /// </param>
+        /// <returns> _name value pair array
+        /// </returns>
+        public static NameValuePair[] SplitMetadata(string buffer)
+        {
+            return SplitMetadata(buffer, FDFS_RECORD_SEPERATOR, FDFS_FIELD_SEPERATOR);
+        }
+
+        /// <summary> split metadata to _name value pair array</summary>
+        /// <param _name="buffer">metadata
+        /// </param>
+        /// <param _name="recordSeperator">record/row seperator
+        /// </param>
+        /// <param _name="filedSeperator">field/column seperator
+        /// </param>
+        /// <returns> _name value pair array
+        /// </returns>
+        public static NameValuePair[] SplitMetadata(string buffer, string recordSeperator, string filedSeperator)
+        {
+            string[] cols;
+
+            string[] rows = buffer.Split(new string[] {recordSeperator}, StringSplitOptions.RemoveEmptyEntries);
+            NameValuePair[] metadatas = new NameValuePair[rows.Length];
+            for (int i = 0; i < rows.Length; i++)
+            {
+                cols = rows[i].Split(new string[] {filedSeperator}, 2, StringSplitOptions.RemoveEmptyEntries);
+                metadatas[i] = new NameValuePair(cols[0]);
+                if (cols.Length == 2) metadatas[i].Value = cols[1];
+            }
+
+            return metadatas;
+        }
+
+        /// <summary> pack metadata array to string</summary>
+        /// <param _name="metadatas">metadata array
+        /// </param>
+        /// <returns> packed metadata
+        /// </returns>
+        public static string PackMetadata(NameValuePair[] metadatas)
+        {
+            if (metadatas.Length == 0) return string.Empty;
+
+            StringBuilder sb = new StringBuilder(32*metadatas.Length)
+                .Append(metadatas[0].Name).
+                Append(FDFS_FIELD_SEPERATOR).
+                Append(metadatas[0].Value);
+            for (int i = 1; i < metadatas.Length; i++)
+            {
+                sb.Append(FDFS_RECORD_SEPERATOR);
+                sb.Append(metadatas[i].Name).Append(FDFS_FIELD_SEPERATOR).Append(metadatas[i].Value);
+            }
+            return sb.ToString();
+        }
+
+        /// <summary> send quit command to server and close socket</summary>
+        /// <param _name="tcpClient">the StorageConnection object
+        /// </param>
+        public static void CloseTcpClient(TcpClient tcpClient)
+        {
+            sbyte[] headerBuffer = PackHeader(FDFS_PROTO_CMD_QUIT, 0, 0);
+            sbyte[] temp = headerBuffer;
+            tcpClient.GetStream().Write(SupportClass.ToByteArray(temp), 0, temp.Length);
+            tcpClient.Close();
+        }
+
+        /// <summary> long convert to buff (big-endian)</summary>
+        /// <param _name="long">number
+        /// </param>
+        /// <returns> 8 bytes buff
+        /// </returns>
+        public static sbyte[] LongToBuffer(long value)
+        {
+            sbyte[] bytes = new sbyte[8];
+            bytes[0] = (sbyte) ((value >> 56) & 0xFF);
+            bytes[1] = (sbyte) ((value >> 48) & 0xFF);
+            bytes[2] = (sbyte) ((value >> 40) & 0xFF);
+            bytes[3] = (sbyte) ((value >> 32) & 0xFF);
+            bytes[4] = (sbyte) ((value >> 24) & 0xFF);
+            bytes[5] = (sbyte) ((value >> 16) & 0xFF);
+            bytes[6] = (sbyte) ((value >> 8) & 0xFF);
+            bytes[7] = (sbyte) (value & 0xFF);
+
+            return bytes;
+        }
+
+        /// <summary> long convert to buff (big-endian)</summary>
+        /// <param _name="long">number
+        /// </param>
+        /// <returns> 8 bytes buff
+        /// </returns>
+        public static byte[] LongToByteBuffer(long value)
+        {
+            byte[] bytes = new byte[8];
+            bytes[0] = (byte)((value >> 56) & 0xFF);
+            bytes[1] = (byte)((value >> 48) & 0xFF);
+            bytes[2] = (byte)((value >> 40) & 0xFF);
+            bytes[3] = (byte)((value >> 32) & 0xFF);
+            bytes[4] = (byte)((value >> 24) & 0xFF);
+            bytes[5] = (byte)((value >> 16) & 0xFF);
+            bytes[6] = (byte)((value >> 8) & 0xFF);
+            bytes[7] = (byte)(value & 0xFF);
+
+            return bytes;
+        }
+
+        public static long BufferToLong(byte[] bytes, int offset)
+        {
+            return (((long)(bytes[offset] >= 0 ? bytes[offset] : 256 + bytes[offset])) << 56) |
+                   (((long)(bytes[offset + 1] >= 0 ? bytes[offset + 1] : 256 + bytes[offset + 1])) << 48) |
+                   (((long)(bytes[offset + 2] >= 0 ? bytes[offset + 2] : 256 + bytes[offset + 2])) << 40) |
+                   (((long)(bytes[offset + 3] >= 0 ? bytes[offset + 3] : 256 + bytes[offset + 3])) << 32) |
+                   (((long)(bytes[offset + 4] >= 0 ? bytes[offset + 4] : 256 + bytes[offset + 4])) << 24) |
+                   (((long)(bytes[offset + 5] >= 0 ? bytes[offset + 5] : 256 + bytes[offset + 5])) << 16) |
+                   (((long)(bytes[offset + 6] >= 0 ? bytes[offset + 6] : 256 + bytes[offset + 6])) << 8) |
+                   ((bytes[offset + 7] >= 0 ? bytes[offset + 7] : 256 + bytes[offset + 7]));
+        }
+
+
+
+        /// <summary> long convert to buff</summary>
+        /// <param _name="long">number
+        /// </param>
+        /// <returns> 8 bytes buff
+        /// </returns>
+        public static long BufferToLong(sbyte[] bytes, int offset)
+        {
+            return (((long) (bytes[offset] >= 0 ? bytes[offset] : 256 + bytes[offset])) << 56) |
+                   (((long) (bytes[offset + 1] >= 0 ? bytes[offset + 1] : 256 + bytes[offset + 1])) << 48) |
+                   (((long) (bytes[offset + 2] >= 0 ? bytes[offset + 2] : 256 + bytes[offset + 2])) << 40) |
+                   (((long) (bytes[offset + 3] >= 0 ? bytes[offset + 3] : 256 + bytes[offset + 3])) << 32) |
+                   (((long) (bytes[offset + 4] >= 0 ? bytes[offset + 4] : 256 + bytes[offset + 4])) << 24) |
+                   (((long) (bytes[offset + 5] >= 0 ? bytes[offset + 5] : 256 + bytes[offset + 5])) << 16) |
+                   (((long) (bytes[offset + 6] >= 0 ? bytes[offset + 6] : 256 + bytes[offset + 6])) << 8) |
+                   ((bytes[offset + 7] >= 0 ? bytes[offset + 7] : 256 + bytes[offset + 7]));
+        }
+
+
+        public static string GetFilePath(string fileName)
+        {
+            int index = fileName.IndexOf("/M00/");//处理标识符
+            return index > -1 ? fileName.Remove(0, index + 4) : fileName;
+        }
+
+    }
+}

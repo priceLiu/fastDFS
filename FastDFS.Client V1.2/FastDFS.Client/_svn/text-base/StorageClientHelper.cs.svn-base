@@ -1,0 +1,278 @@
+using System;
+using System.Net.Sockets;
+using FastDFS.Client.Component;
+
+namespace FastDFS.Client
+{
+    /// <summary>
+    /// 存储器帮助类，主要调用上传文件方法
+    /// </summary>
+    public class StorageClientHelper : StorageClient 
+    {
+        private const string SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR = "/";
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageClientHelper"/> class.
+        /// </summary>
+        /// <param name="tcpClient">追踪器链接.</param>
+        /// <param name="storageServer">存储器服务器.</param>
+        public StorageClientHelper(TcpClient tcpClient, StorageServer storageServer) : base(tcpClient, storageServer)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageClientHelper"/> class.
+        /// </summary>
+        /// <param name="tcpClient">The TCP client.</param>
+        public StorageClientHelper(TcpClient tcpClient)
+            : base(tcpClient, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageClientHelper"/> class.
+        /// </summary>
+        public StorageClientHelper()
+            : base(TrackerClient.TrackerConnection, null)
+        {
+        } 
+
+        public static sbyte SplitFileId(string fileId, string[] results)
+        {
+            int pos = fileId.IndexOf(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR);
+            if ((pos <= 0) || (pos == fileId.Length - 1))
+                return - 1;
+
+            results[0] = fileId.Substring(0, (pos) - (0)); //group _name
+            results[1] = fileId.Substring(pos + 1); //file _name
+            return 0;
+        }
+
+        /// <summary>
+        /// Uploads the file.
+        /// </summary>
+        /// <param name="localFileName">Name of the local file.</param>
+        /// <param name="extension">The extension.</param>
+        /// <param name="metadatas">The metadatas.</param>
+        /// <returns></returns>
+        public virtual string UploadFile(string localFileName, string extension, NameValuePair[] metadatas)
+        {
+            return UploadFile(string.Empty, localFileName, extension, metadatas);
+        }
+        
+        /// <summary>
+        /// Uploads the file.
+        /// </summary>
+        /// <param name="groupName">Name of the group.</param>
+        /// <param name="localFileName">Name of the local file.</param>
+        /// <param name="extension">The extension.</param>
+        /// <param name="metadatas">The metadatas.</param>
+        /// <returns></returns>
+        public virtual string UploadFile(string groupName, string localFileName, string extension,NameValuePair[] metadatas)
+        {
+            string[] parts = Upload(groupName, localFileName, extension, metadatas);
+            return parts != null ? Toolkit.GetFilePath(string.Format("{0}{1}{2}", parts[0], SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR, parts[1])) : null;
+        }
+
+        /// <summary>
+        /// Uploads the file.
+        /// </summary>
+        /// <param name="buffer">The buffer.</param>
+        /// <param name="extension">The extension.</param>
+        /// <param name="metadatas">The metadatas.</param>
+        /// <returns></returns>
+        public virtual string UploadFile(sbyte[] buffer, string extension, NameValuePair[] metadatas)
+        {
+            string[] parts = Upload(buffer, extension, metadatas);
+            return parts != null ? parts[0] + SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR + parts[1] : null;
+        }
+
+        /// <summary>
+        /// 上传文件（推荐使用）
+        /// </summary>
+        /// <param name="buffer">文件二进制流.</param>
+        /// <param name="extension">上传文件扩展名.</param>
+        /// <returns>文件http访问路径</returns>
+        public virtual string UploadFile(byte[] buffer, string extension)
+        {
+            return UploadFile(buffer, extension, null);
+        }
+
+        /// <summary>
+        /// 上传文件（推荐使用）
+        /// </summary>
+        /// <param name="buffer">文件二进制流.</param>
+        /// <param name="extension">上传文件扩展名.</param>
+        /// <param name="metadatas">文件扩展属性.</param>
+        /// <returns>文件http访问路径</returns>
+        public virtual string UploadFile(byte[] buffer, string extension, NameValuePair[] metadatas)
+        {
+            string[] parts = Upload(SupportClass.ToSByteArray(buffer), extension, metadatas);
+            return parts != null ? Toolkit.GetFilePath(string.Format("{0}{1}{2}", parts[0], SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR, parts[1])) : null;
+        }
+
+        /// <summary>
+        /// 上传文件（推荐使用）
+        /// </summary>
+        /// <param name="groupName">指定文件上传组名.</param>
+        /// <param name="buffer">文件二进制流.</param>
+        /// <param name="extension">上传文件扩展名.</param>
+        /// <returns>文件http访问路径</returns>
+        public virtual string UploadFile(string groupName, byte[] buffer, string extension)
+        {
+            return UploadFile(groupName, buffer, extension, null);
+        }
+
+        /// <summary>
+        /// 上传文件（推荐使用）
+        /// </summary>
+        /// <param name="groupName">指定文件上传组名.</param>
+        /// <param name="buffer">文件二进制流.</param>
+        /// <param name="extension">上传文件扩展名.</param>
+        /// <param name="metadatas">文件扩展属性.</param>
+        /// <returns>文件http访问路径</returns>
+        public virtual string UploadFile(string groupName, byte[] buffer, string extension, NameValuePair[] metadatas)
+        {
+            string[] parts = Upload(groupName, SupportClass.ToSByteArray(buffer), extension, metadatas);
+            return parts != null ? Toolkit.GetFilePath(string.Format("{0}{1}{2}",parts[0] , SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR ,parts[1])) : null;
+        }
+
+        /// <summary>
+        /// Uploads the file.
+        /// </summary>
+        /// <param name="groupName">Name of the group.</param>
+        /// <param name="buffer">The buffer.</param>
+        /// <param name="extension">The extension.</param>
+        /// <param name="metadatas">The metadatas.</param>
+        /// <returns></returns>
+        public virtual string UploadFile(string groupName, sbyte[] buffer, string extension,NameValuePair[] metadatas)
+        {
+            string[] parts = Upload(groupName, buffer, extension, metadatas);
+            return parts != null ? Toolkit.GetFilePath(string.Format("{0}{1}{2}", parts[0], SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR, parts[1])) : null;
+        }
+
+        /// <summary>
+        /// delete file from storage server
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <returns>
+        /// 0 for success, none zero for fail (error code)
+        /// </returns>
+        public virtual int DeleteFile(string fileId)
+        {
+            string[] parts = new String[2];
+            ErrorNo = SplitFileId(fileId, parts);
+            return ErrorNo != 0 ? ErrorNo : Delete(parts[0], parts[1]);
+        }
+
+        /// <summary>
+        /// download file from storage server
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <returns>file content/buff, return null if fail</returns>
+        public virtual sbyte[] DownloadFile(string fileId)
+        {
+            return DownloadFile(fileId, 0, 0);
+        }
+
+        /// <summary>
+        /// download file from storage server
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="length">The length.</param>
+        /// <returns>file content/buff, return null if fail</returns>
+        public virtual sbyte[] DownloadFile(string fileId, long offset, long length)
+        {
+            string[] parts = new string[2];
+            ErrorNo = SplitFileId(fileId, parts);
+            return ErrorNo != 0 ? null : Download(parts[0], parts[1], offset, length);
+        }
+
+        /// <summary>
+        /// download file from storage server
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <param name="localFileName">Name of the local file.</param>
+        /// <returns>
+        /// 0 success, return none zero _errno if fail
+        /// </returns>
+        public virtual int DownloadFile(string fileId, string localFileName)
+        {
+            return DownloadFile(fileId, 0, 0, localFileName);
+        }
+
+        /// <summary>
+        /// download file from storage server
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="length">The length.</param>
+        /// <param name="localFileName">Name of the local file.</param>
+        /// <returns>
+        /// 0 success, return none zero _errno if fail
+        /// </returns>
+        public virtual int DownloadFile(string fileId, long offset, long length, string localFileName)
+        {
+            string[] parts = new string[2];
+            ErrorNo = SplitFileId(fileId, parts);
+            return ErrorNo != 0 ? ErrorNo : Download(parts[0], parts[1], offset, length, localFileName);
+        }
+
+        /// <summary>
+        /// download file from storage server
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <param name="callback">The callback.</param>
+        /// <returns>
+        /// 0 success, return none zero _errno if fail
+        /// </returns>
+        public virtual int DownloadFile(string fileId, IDowloadCallback callback)
+        {
+            return DownloadFile(fileId, 0, 0, callback);
+        }
+
+        /// <summary>
+        /// download file from storage server
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="length">The length.</param>
+        /// <param name="callback">The callback.</param>
+        /// <returns>
+        /// 0 success, return none zero _errno if fail
+        /// </returns>
+        public virtual int DownloadFile(string fileId, long offset, long length,IDowloadCallback callback)
+        {
+            string[] parts = new string[2];
+            ErrorNo = SplitFileId(fileId, parts);
+            return ErrorNo != 0 ? ErrorNo : Download(parts[0], parts[1], offset, length, callback);
+        }
+
+        /// <summary>
+        /// get all metadata items from storage server
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <returns>meta info array, return null if fail</returns>
+        public virtual NameValuePair[] GetFileMetadatas(string fileId)
+        {
+            string[] parts = new string[2];
+            ErrorNo = SplitFileId(fileId, parts);
+            return ErrorNo != 0 ? null : GetMetadatas(parts[0], parts[1]);
+        }
+
+        /// <summary>
+        /// Sets the metedatas.
+        /// </summary>
+        /// <param name="fileId">The file id.</param>
+        /// <param name="metadatas">The metadatas.</param>
+        /// <param name="flag">The flag.</param>
+        /// <returns></returns>
+        public virtual int SetMetedatas(string fileId, NameValuePair[] metadatas, sbyte flag)
+        {
+            string[] parts = new string[2];
+            ErrorNo = SplitFileId(fileId, parts);
+            return ErrorNo != 0 ? ErrorNo : SetMetadatas(parts[0], parts[1], metadatas, flag);
+        }
+    }
+}

@@ -1,0 +1,103 @@
+using System.Net;
+using System.Net.Sockets;
+using System.Xml;
+using FastDFS.Client.Core;
+
+namespace FastDFS.Client
+{
+    public class FastDFSService
+    {
+        private static string _charset = "ISO8859-1";
+        private static int _networkTimeout = 30;
+        private static IPEndPoint[] _trackerServers;
+        private const string DefaultConfigFilePath = @"config\FastDFS.config";
+        private const string NetworkTimeoutConfigItemName = "NetworkTimeout";
+        private const string TrackerServerConfigItemName = "TrackerServer";
+        private const string CharsetConfigItemName = "Charset";
+        private const string AddressConfigItemName = "Address";
+        private const string PortCoutConfigItemName = "Port";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// millisecond
+        /// </remarks>
+        public static int NetworkTimeout
+        {
+            get { return _networkTimeout; }
+            set { _networkTimeout = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the charset.
+        /// </summary>
+        /// <value>The charset.</value>
+        public static string Charset
+        {
+            get { return _charset; }
+            set { _charset = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the tracker servers.
+        /// </summary>
+        /// <value>The tracker servers.</value>
+        public static IPEndPoint[] TrackerServers
+        {
+            get { return _trackerServers; }
+            set { _trackerServers = value; }
+        }
+
+        /// <summary>
+        /// Inits this instance.
+        /// </summary>
+        public static void Init()
+        {
+            Init(DefaultConfigFilePath);
+        }
+
+        /// <summary>
+        /// load global variables
+        /// </summary>
+        /// <param name="configFile">The config file.</param>
+        public static void Init(string configFile)
+        {
+            XmlDocument doc = ConfigReader.LoadXml(configFile);
+            object network_timeout;
+            if (ConfigReader.TryGetNodeValue(doc, NetworkTimeoutConfigItemName, out network_timeout))
+                _networkTimeout = int.Parse(network_timeout.ToString());
+            object charset;
+            if (ConfigReader.TryGetNodeValue(doc, CharsetConfigItemName, out charset))
+                _charset = charset.ToString();
+
+            XmlNodeList nodes = ConfigReader.Analyze(doc, TrackerServerConfigItemName);
+            TrackerServers = new IPEndPoint[nodes.Count];
+            object ipAddress;
+            object port;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                if (ConfigReader.TryGetAttributeValue(nodes[i], AddressConfigItemName, out ipAddress) &&
+                    ConfigReader.TryGetAttributeValue(nodes[i], PortCoutConfigItemName, out port))
+                {
+                    TrackerServers[i] = new IPEndPoint(IPAddress.Parse(ipAddress.ToString()), int.Parse(port.ToString()));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the socket.
+        /// </summary>
+        /// <param _name="ipAddress">The ip address.</param>
+        /// <param _name="_port">The _port.</param>
+        /// <returns></returns>
+        public static TcpClient GetSocket(string ipAddress, int port)
+        {
+            TcpClient sock = new TcpClient();
+            sock.ReceiveTimeout = _networkTimeout;
+            sock.Connect(IPAddress.Parse(ipAddress), port);
+            return sock;
+        }
+
+    }
+}

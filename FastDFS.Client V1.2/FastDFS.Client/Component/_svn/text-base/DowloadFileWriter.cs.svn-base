@@ -1,0 +1,69 @@
+using System;
+using System.IO;
+
+namespace FastDFS.Client.Component
+{
+    /// <summary>
+    /// 写下载文件的类
+    /// </summary>
+    public class DowloadFileWriter : IDowloadCallback
+    {
+        private readonly string _fileName;
+        private long _length;
+        private FileStream _fileStream;
+
+
+        /// <summary>
+        /// 初始化 <see cref="DowloadFileWriter"/> 对象.
+        /// </summary>
+        /// <param name="fileName">文件全名.</param>
+        public DowloadFileWriter(string fileName)
+        {
+            _fileName = fileName;
+        }
+
+
+        /// <summary>
+        /// 下载文件
+        /// </summary>
+        /// <param name="headerSize">文件头的大小.</param>
+        /// <param name="data">文件的内容.</param>
+        /// <param name="bytes">文件的长度.</param>
+        /// <returns>返回0，表示成功；非0，表示失败</returns>
+        public virtual int Recv(long headerSize, sbyte[] data, int bytes)
+        {
+            try
+            {
+                if (_fileStream == null)
+                    _fileStream = new FileStream(_fileName, FileMode.Create);
+
+                _fileStream.Write(SupportClass.ToByteArray(data), 0, bytes);
+                _length += bytes;
+
+                if (_length == headerSize)
+                {
+                    _fileStream.Close();
+                    _fileStream = null;
+                    _length = 0;
+                }
+            }
+            catch (IOException ex)
+            {
+                SupportClass.WriteStackTrace(ex, Console.Error);
+                return - 1;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// 删除<see cref="DowloadFileWriter"/> 对象的所使用的资源.
+        /// </summary>
+        ~DowloadFileWriter()
+        {
+            if (_fileStream == null) return;
+            _fileStream.Close();
+            _fileStream = null;
+        }
+    }
+}

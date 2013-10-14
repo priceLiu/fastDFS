@@ -1,0 +1,101 @@
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/SourceCode/!svn/ver/7620/Aot/Dev/FastDFS-Client/FastDFS.Client/Component
+END
+Util.cs
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/Util.cs
+END
+IDowloadCallback.cs
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/IDowloadCallback.cs
+END
+ServerInfo.cs
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/ServerInfo.cs
+END
+Toolkit.cs
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/Toolkit.cs
+END
+DowloadFileWriter.cs
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/DowloadFileWriter.cs
+END
+NameValuePair.cs
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/NameValuePair.cs
+END
+TrackerClient.cs
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/SourceCode/!svn/ver/4831/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/TrackerClient.cs
+END
+TcpConnectionPoolManager.cs
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/SourceCode/!svn/ver/7620/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/TcpConnectionPoolManager.cs
+END
+StorageServer.cs
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/StorageServer.cs
+END
+TcpConnectionFactory.cs
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/TcpConnectionFactory.cs
+END
+Protocol.cs
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/Protocol.cs
+END
+StorageClient.cs
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/SourceCode/!svn/ver/4831/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/StorageClient.cs
+END
+HeaderInfo.cs
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/HeaderInfo.cs
+END
+TcpConnection.cs
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/TcpConnection.cs
+END
+StorageServerInfo.cs
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/StorageServerInfo.cs
+END
+PackageInfo.cs
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Component/PackageInfo.cs
+END

@@ -1,0 +1,69 @@
+using System.IO;
+using System.Net.Sockets;
+
+namespace FastDFS.Client.Component
+{
+    /// <summary> Storage Server Info</summary>
+    /// <author>  Happy Fish / YuQing
+    /// </author>
+    /// <version>  Version 1.4
+    /// </version>
+    public class StorageServer
+    {
+        private TcpClient _tcpClient;
+        private int _storePathIndex;
+
+        /// <param _name="_tcpClient">StorageConnection of storage server, can be null
+        /// </param>
+        /// <param _name="storePathIndex">the store path index on the storage server
+        /// </param>
+        public StorageServer(TcpClient tcpClient, int storePathIndex)
+        {
+            _tcpClient = tcpClient;
+            _storePathIndex = storePathIndex;
+        }
+
+        /// <param _name="_tcpClient">StorageConnection of storage server, can be null
+        /// </param>
+        /// <param _name="storePath">the store path index on the storage server
+        /// </param>
+        public StorageServer(TcpClient tcpClient, sbyte storePath)
+        {
+            _tcpClient = tcpClient;
+            _storePathIndex = storePath < 0 ? 256 + storePath : storePath;
+        }
+
+        /// <returns> the storage socket
+        /// </returns>
+        public virtual TcpClient StorageConnection
+        {
+            get { return _tcpClient; }
+            set { _tcpClient = value; }
+        }
+
+        /// <returns> the store path index on the storage server
+        /// </returns>
+        public virtual int StorePathIndex
+        {
+            get { return _storePathIndex; }
+            set { _storePathIndex = value; }
+        }
+
+        public virtual Stream OutputStream
+        {
+            get { return _tcpClient.GetStream(); }
+        }
+
+        public virtual Stream InputStream
+        {
+            get { return _tcpClient.GetStream(); }
+        }
+
+        public virtual void close()
+        {
+            if (null == _tcpClient) return;
+            Toolkit.CloseTcpClient(_tcpClient);
+            _tcpClient = null;
+        }
+    }
+}

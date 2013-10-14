@@ -1,0 +1,197 @@
+using System;
+using System.IO;
+using System.Text;
+
+/// <summary>
+/// Contains conversion support elements such as classes, interfaces and static methods.
+/// </summary>
+public class SupportClass
+{
+    /// <summary>
+    /// Converts an array of sbytes to an array of bytes
+    /// </summary>
+    /// <param _name="sbyteArray">The array of sbytes to be converted</param>
+    /// <returns>The new array of bytes</returns>
+    public static byte[] ToByteArray(sbyte[] sbyteArray)
+    {
+        byte[] byteArray = null;
+
+        if (sbyteArray != null)
+        {
+            byteArray = new byte[sbyteArray.Length];
+            for (int index = 0; index < sbyteArray.Length; index++)
+                byteArray[index] = (byte) sbyteArray[index];
+        }
+        return byteArray;
+    }
+
+    /// <summary>
+    /// Writes the exception stack trace to the received stream
+    /// </summary>
+    /// <param _name="throwable">Exception to obtain information from</param>
+    /// <param _name="stream">Output sream used to write to</param>
+    public static void WriteStackTrace(Exception throwable, TextWriter stream)
+    {
+        stream.Write(throwable.StackTrace);
+        stream.Flush();
+    }
+
+    /// <summary>Reads a number of characters from the current source Stream and writes the data to the target array at the specified index.</summary>
+    /// <param _name="sourceStream">The source Stream to read from.</param>
+    /// <param _name="target">Contains the array of characteres read from the source Stream.</param>
+    /// <param _name="start">The starting index of the target array.</param>
+    /// <param _name="count">The maximum number of characters to read from the source Stream.</param>
+    /// <returns>The number of characters read. The number will be less than or equal to count depending on the data available in the source Stream. Returns -1 if the end of the stream is reached.</returns>
+    public static Int32 ReadInput(Stream sourceStream, sbyte[] target, int start, int count)
+    {
+        if (target.Length == 0)
+            return 0;
+
+        byte[] receiver = new byte[target.Length];
+        int bytesRead = sourceStream.Read(receiver, start, count);
+
+        if (bytesRead == 0)
+            return -1;
+
+        for (int i = start; i < start + bytesRead; i++)
+            target[i] = (sbyte) receiver[i];
+
+        return bytesRead;
+    }
+
+    /// <summary>Reads a number of characters from the current source TextReader and writes the data to the target array at the specified index.</summary>
+    /// <param _name="sourceTextReader">The source TextReader to read from</param>
+    /// <param _name="target">Contains the array of characteres read from the source TextReader.</param>
+    /// <param _name="start">The starting index of the target array.</param>
+    /// <param _name="count">The maximum number of characters to read from the source TextReader.</param>
+    /// <returns>The number of characters read. The number will be less than or equal to count depending on the data available in the source TextReader. Returns -1 if the end of the stream is reached.</returns>
+    public static Int32 ReadInput(TextReader sourceTextReader, sbyte[] target, int start, int count)
+    {
+        if (target.Length == 0) return 0;
+
+        char[] charArray = new char[target.Length];
+        int bytesRead = sourceTextReader.Read(charArray, start, count);
+
+        if (bytesRead == 0) return -1;
+
+        for (int index = start; index < start + bytesRead; index++)
+            target[index] = (sbyte) charArray[index];
+
+        return bytesRead;
+    }
+
+    /// <summary>
+    /// Receives a byte array and returns it transformed in an sbyte array
+    /// </summary>
+    /// <param _name="byteArray">Byte array to process</param>
+    /// <returns>The transformed array</returns>
+    public static sbyte[] ToSByteArray(byte[] byteArray)
+    {
+        sbyte[] sbyteArray = null;
+        if (byteArray != null)
+        {
+            sbyteArray = new sbyte[byteArray.Length];
+            for (int index = 0; index < byteArray.Length; index++)
+                sbyteArray[index] = (sbyte) byteArray[index];
+        }
+        return sbyteArray;
+    }
+
+    /// <summary>
+    /// Checks if the giving File instance is a directory or file, and returns his Length
+    /// </summary>
+    /// <param _name="file">The File instance to check</param>
+    /// <returns>The length of the file</returns>
+    public static long FileLength(FileInfo file)
+    {
+        return file.Exists ? file.Length : 0;
+    }
+
+    /// <summary>
+    /// Converts an array of sbytes to an array of chars
+    /// </summary>
+    /// <param _name="sByteArray">The array of sbytes to convert</param>
+    /// <returns>The new array of chars</returns>
+    public static char[] ToCharArray(sbyte[] sByteArray)
+    {
+        return Encoding.UTF8.GetChars(ToByteArray(sByteArray));
+    }
+
+    /// <summary>
+    /// Converts an array of bytes to an array of chars
+    /// </summary>
+    /// <param _name="byteArray">The array of bytes to convert</param>
+    /// <returns>The new array of chars</returns>
+    public static char[] ToCharArray(byte[] byteArray)
+    {
+        return Encoding.UTF8.GetChars(byteArray);
+    }
+
+    /// <summary>
+    /// This class manages array operations.
+    /// </summary>
+    public class ArraySupport
+    {
+        /// <summary>
+        /// Compares the entire members of one array whith the other one.
+        /// </summary>
+        /// <param _name="array1">The array to be compared.</param>
+        /// <param _name="array2">The array to be compared with.</param>
+        /// <returns>True if both arrays are equals otherwise it returns false.</returns>
+        /// <remarks>Two arrays are equal if they contains the same elements in the same order.</remarks>
+        public static bool Equals(Array array1, Array array2)
+        {
+            bool result = false;
+            if ((array1 == null) && (array2 == null))
+                result = true;
+            else if ((array1 != null) && (array2 != null))
+            {
+                if (array1.Length == array2.Length)
+                {
+                    int length = array1.Length;
+                    result = true;
+                    for (int index = 0; index < length; index++)
+                    {
+                        if ((array1.GetValue(index).Equals(array2.GetValue(index)))) continue;
+                        result = false;
+                        break;
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Fills the array with an specific value from an specific index to an specific index.
+        /// </summary>
+        /// <param _name="array">The array to be filled.</param>
+        /// <param _name="fromindex">The first index to be filled.</param>
+        /// <param _name="toindex">The last index to be filled.</param>
+        /// <param _name="val">The value to fill the array with.</param>
+        public static void Fill(Array array, Int32 fromindex, Int32 toindex, Object val)
+        {
+            Object Temp_Object = val;
+            Type elementtype = array.GetType().GetElementType();
+            if (elementtype != val.GetType())
+                Temp_Object = Convert.ChangeType(val, elementtype);
+            if (array.Length == 0)
+                throw (new NullReferenceException());
+            if (fromindex > toindex)
+                throw (new ArgumentException());
+            if ((fromindex < 0) || (array).Length < toindex)
+                throw (new IndexOutOfRangeException());
+            for (int index = (fromindex > 0) ? fromindex-- : fromindex; index < toindex; index++)
+                array.SetValue(Temp_Object, index);
+        }
+
+        /// <summary>
+        /// Fills the array with an specific value.
+        /// </summary>
+        /// <param _name="array">The array to be filled.</param>
+        /// <param _name="val">The value to fill the array with.</param>
+        public static void Fill(Array array, Object val)
+        {
+            Fill(array, 0, array.Length, val);
+        }
+    }
+}

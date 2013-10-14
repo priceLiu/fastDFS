@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Core/Pool
+END
+IPoolableObjectFactory.cs
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Core/Pool/IPoolableObjectFactory.cs
+END
+IObjectPool.cs
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/SourceCode/!svn/ver/4014/Aot/Dev/FastDFS-Client/FastDFS.Client/Core/Pool/IObjectPool.cs
+END
